@@ -1,10 +1,12 @@
 # skid_buffer
--- Skid Buffer in Verilog to be used as elastic buffer to store the data when receiver applies backpressure to sender
--- Pipeline Skid Buffer in Verilog to be used as as buffer in pipeline between two modules. 
+-- Skid Buffer to be used as elastic buffer to store the data when receiver applies backpressure to sender
+
+-- Pipeline Skid Buffer to be used as as buffer in pipeline between two modules. 
 
 Source codes included
 ---------------------
 -- Skid Buffer
+
 -- Pipeline Skid Buffer
 
 Comments
