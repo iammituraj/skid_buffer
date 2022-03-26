@@ -125,6 +125,7 @@ end
    Continuous Assignments
 -------------------------------------------------------------------------------------------------------------------------------*/
 assign ready   = i_ready || ~valid_rg ;
+assign o_ready = ready_rg             ;
 assign o_data  = data_rg              ;
 assign o_valid = valid_rg             ;
 

@@ -42,6 +42,7 @@ module skid_buffer #(
 /*-------------------------------------------------------------------------------------------------------------------------------
    Internal Registers/Signals
 -------------------------------------------------------------------------------------------------------------------------------*/
+logic                ready_rg   ;        // Ready 
 logic [DWIDTH-1 : 0] data_rg    ;        // Data buffer
 logic                bypass_rg  ;        // Bypass signal to data and data valid muxes
 
@@ -55,6 +56,7 @@ always @(posedge clk) begin
    if (!rstn) begin
       
       // Internal Registers
+      ready_rg  <= 1'b0 ;
       data_rg   <= '0   ;     
       bypass_rg <= 1'b1 ;
 
@@ -65,9 +67,12 @@ always @(posedge clk) begin
       
       // Bypass state      
       if (bypass_rg) begin
+         
+         ready_rg <= 1'b1 ;
 
-         if (!i_ready && i_valid) begin
-            data_rg   <= i_data ;        // Data skidded, store to buffer
+         if (!i_ready && i_valid && ready_rg) begin
+            ready_rg  <= 1'b0   ;            
+            data_rg   <= i_data ;        // Data skid happened, store to buffer
             bypass_rg <= 1'b0   ;        // To skid mode  
          end 
 
@@ -77,7 +82,8 @@ always @(posedge clk) begin
       else begin
          
          if (i_ready) begin
-            bypass_rg <= 1'b1   ;        // Output side ready, back to bypass mode           
+            ready_rg  <= 1'b1   ;            
+            bypass_rg <= 1'b1   ;        // Back to bypass mode           
          end
 
       end      
@@ -90,8 +96,9 @@ end
 /*-------------------------------------------------------------------------------------------------------------------------------
    Continuous Assignments
 -------------------------------------------------------------------------------------------------------------------------------*/
-assign o_data  = bypass_rg ? i_data  : data_rg ;        // Data mux
-assign o_valid = bypass_rg ? i_valid : 1'b1    ;        // Data valid mux
+assign o_ready = ready_rg                                   ;        
+assign o_data  = bypass_rg ? i_data  : data_rg              ;        // Data mux
+assign o_valid = bypass_rg ? (i_valid & ready_rg) : 1'b1    ;        // Data valid mux
 
 
 endmodule
