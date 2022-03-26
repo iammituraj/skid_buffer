@@ -1,9 +1,10 @@
 /*===============================================================================================================================
-   Module       : Skid Buffer
+   Module       : Pipeline Skid Buffer
 
-   Description  : Skid Buffer is used as elastic buffer to store the data when receiver applies backpressure to sender. 
-                  - Latency-0 buffer implemented with one register.    
+   Description  : Pipeline Skid Buffer is used as buffer in pipeline between two modules.  
+                  - Smallest pipeline buffer; implemented with just two registers.   
                   - Simple valid-ready handshaking.
+                  - Latency = 1 cycle. 
                   - Configurable data width.              
 
    Developer    : Mitu Raj, chip@chipmunklogic.com at Chipmunk Logic ™, https://chipmunklogic.com
@@ -13,10 +14,10 @@
 ===============================================================================================================================*/
 
 /*-------------------------------------------------------------------------------------------------------------------------------
-                                                      S K I D   B U F F E R
+                                                P I P E   S K I D   B U F F E R
 -------------------------------------------------------------------------------------------------------------------------------*/
 
-module skid_buffer #(
+module pipe_skid_buffer #(
    
    // Global Parameters   
    parameter DWIDTH    =  8                                // Data width
@@ -40,14 +41,25 @@ module skid_buffer #(
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------
-   Internal Registers/Signals
+   Local Parameters
 -------------------------------------------------------------------------------------------------------------------------------*/
-logic [DWIDTH-1 : 0] data_rg    ;        // Data buffer
-logic                bypass_rg  ;        // Bypass signal to data and data valid muxes
+
+// State encoding
+localparam PIPE  = 1'b0 ;
+localparam SKID  = 1'b1 ;
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------
-   Synchronous logic
+   Internal Registers/Signals
+-------------------------------------------------------------------------------------------------------------------------------*/
+logic                state_rg                                  ;        // State register
+logic [DWIDTH-1 : 0] data_rg, sparebuff_rg                     ;        // Data buffer, Spare buffer
+logic                valid_rg, sparebuff_valid_rg, ready_rg    ;        // Valid and Ready signals 
+logic                ready                                     ;        // Pipeline ready signal
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+   Synchronous logic 
 -------------------------------------------------------------------------------------------------------------------------------*/
 always @(posedge clk) begin
    
@@ -55,32 +67,54 @@ always @(posedge clk) begin
    if (!rstn) begin
       
       // Internal Registers
-      data_rg   <= '0   ;     
-      bypass_rg <= 1'b1 ;
+      state_rg           <= PIPE ;
+      data_rg            <= '0   ;     
+      sparebuff_rg       <= '0   ;
+      valid_rg           <= 1'b0 ;
+      sparebuff_valid_rg <= 1'b0 ;
+      ready_rg           <= 1'b0 ;
 
    end
    
    // Out of reset
    else begin
       
-      // Bypass state      
-      if (bypass_rg) begin
-
-         if (!i_ready && i_valid) begin
-            data_rg   <= i_data ;        // Data skidded, store to buffer
-            bypass_rg <= 1'b0   ;        // To skid mode  
-         end 
-
-      end
-      
-      // Skid state
-      else begin
+      case (state_rg)   
          
-         if (i_ready) begin
-            bypass_rg <= 1'b1   ;        // Output side ready, back to bypass mode           
+         /* Stage where data is piped out or stored to spare buffer */  
+         PIPE : begin
+            
+            // Pipe data out             
+            if (ready) begin
+               data_rg            <= i_data  ;  
+               valid_rg           <= i_valid ;
+               ready_rg           <= 1'b1    ;               
+            end
+
+            // Pipeline stall, store input data to spare buffer (skid happened)
+            else begin
+               sparebuff_rg       <= i_data  ;
+               sparebuff_valid_rg <= i_valid ;
+               ready_rg           <= 1'b0    ;
+               state_rg           <= SKID    ;
+            end
+
+         end
+         
+         /* Stage to wait after data skid happened */
+         SKID : begin
+            
+            // Copy data from spare buffer to data buffer, resume pipeline           
+            if (ready) begin
+               data_rg  <= sparebuff_rg       ;
+               valid_rg <= sparebuff_valid_rg ;               
+               ready_rg <= 1'b1               ;
+               state_rg <= PIPE               ;               
+            end
+
          end
 
-      end      
+      endcase
 
    end
 
@@ -90,12 +124,13 @@ end
 /*-------------------------------------------------------------------------------------------------------------------------------
    Continuous Assignments
 -------------------------------------------------------------------------------------------------------------------------------*/
-assign o_data  = bypass_rg ? i_data  : data_rg ;        // Data mux
-assign o_valid = bypass_rg ? i_valid : 1'b1    ;        // Data valid mux
+assign ready   = i_ready || ~valid_rg ;
+assign o_data  = data_rg              ;
+assign o_valid = valid_rg             ;
 
 
 endmodule
 
 /*-------------------------------------------------------------------------------------------------------------------------------
-                                                      S K I D   B U F F E R
+                                                P I P E   S K I D   B U F F E R
 -------------------------------------------------------------------------------------------------------------------------------*/
