@@ -1,12 +1,10 @@
 # skid_buffer
--- Skid Buffer to be used as elastic buffer to store the data when receiver applies backpressure to sender
-
--- Pipeline Skid Buffer to be used as as buffer in pipeline between two modules. 
+-- Skid Buffer which can be used as elastic buffer to store the data when receiver applies backpressure to sender.
+-- Pipeline Skid Buffer which can be used as buffer in pipeline between two modules. 
 
 Source codes included
 ---------------------
 -- Skid Buffer
-
 -- Pipeline Skid Buffer
 
 Comments
