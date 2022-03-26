@@ -1,5 +1,5 @@
 # skid_buffer
-Skid Buffer in Verilog to pipeline between different stages / modules using simple valid-ready handshaking.
+Skid Buffer in Verilog to be used as pipeline buffer between two modules using simple valid-ready handshaking.
 
 Source codes included
 ---------------------
