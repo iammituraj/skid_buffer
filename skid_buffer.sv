@@ -1,8 +1,8 @@
 /*===============================================================================================================================
    Module       : Skid Buffer
 
-   Description  : Skid Buffer is used as elastic buffer to store the data when receiver applies backpressure to sender. 
-                  - Latency-0 buffer implemented with one register.    
+   Description  : Skid Buffer is used as an elastic buffer to store the data when receiver applies backpressure to sender. 
+                  - Latency-0 buffer implemented with just one register.    
                   - Simple valid-ready handshaking.
                   - Configurable data width.              
 
