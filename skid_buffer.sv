@@ -98,7 +98,7 @@ end
 -------------------------------------------------------------------------------------------------------------------------------*/
 assign o_ready = ready_rg                                   ;        
 assign o_data  = bypass_rg ? i_data  : data_rg              ;        // Data mux
-assign o_valid = bypass_rg ? (i_valid & ready_rg) : 1'b1    ;        // Data valid mux
+assign o_valid = bypass_rg ? i_valid : 1'b1    ;        // Data valid mux
 
 
 endmodule
